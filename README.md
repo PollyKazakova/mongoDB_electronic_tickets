@@ -1,2 +1,2 @@
 # mongoDB_electronic_tickets
-Scripts with create MongoDB for reservation electronic tickets.
+Scripts for creating MongoDB collections for reservation electronic tickets.
