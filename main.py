@@ -1,8 +1,7 @@
 from pymongo import MongoClient
 from random import choice, randint
 from faker import Faker
-import time
-from bson.code import Code
+
 
 # Объект Faker для генерации случайных данных в БД
 from pyreadline.console import event
@@ -40,7 +39,7 @@ def create_events(collection, num_events: int):
     for _ in range(num_events):
         event = {
             "name": fake.word(),
-            "date": fake.future_date(),
+            "date": fake.date(),
             "time": fake.time(),
             "address": {
                 "city": {
@@ -52,7 +51,7 @@ def create_events(collection, num_events: int):
                     "building": fake.building_number()
                 }
             },
-            "available_seats": randint(),
+            "available_seats": randint(0, 100000),
             "age_limit": randint(10, 100),
             "format": choice(formats),
             "status": choice(statuses),
@@ -62,7 +61,7 @@ def create_events(collection, num_events: int):
                 "phone": fake.phone_number()
             }
         }
-    collection.insert_one(event)
+        collection.insert_one(event)
 
 
 def create_members(collection, num_members: int):
@@ -72,13 +71,13 @@ def create_members(collection, num_members: int):
     for _ in range(num_members):
         member = {
             "name": fake.name(),
-            "age": randint(),
+            "age": randint(0, 100),
             "email": fake.email(),
             "phone": fake.phone_number(),
             "interests": [fake.word() for _ in range(randint(0, 6))],
             "event": fake.word()
         }
-    collection.insert_one(member)
+        collection.insert_one(member)
 
 
 def create_orders(collection, num_orders: int):
@@ -95,7 +94,7 @@ def create_orders(collection, num_orders: int):
             "email": fake.email(),
             "date_order": fake.date()
         }
-    collection.insert_one(order)
+        collection.insert_one(order)
 
 
 def find_members_by_age_range(collection, min_age: int, max_age: int):
@@ -146,7 +145,7 @@ def remove_docs_members_by_event(collection, name):
     collection.remove({event: name})
 
 
-def join_events_members(events_collection, members_collection):
+def join_events_members():
     """
     Объединение коллекций мероприятий и участников по полю мероприятия.
     """
@@ -154,7 +153,7 @@ def join_events_members(events_collection, members_collection):
         {
             "$lookup":
                 {
-                    "from": members_collection,
+                    "from": "members",
                     "localField": "name",
                     "foreignField": "event",
                     "as": "members"
@@ -224,7 +223,6 @@ def aggregate_orders_by_event():
 
 
 if __name__ == '__main__':
-
     # Проверка наличия и создание базы данных и коллекций
     events_collection = check_db_and_collection('electronic_tickets', 'events')
     members_collection = check_db_and_collection('electronic_tickets', 'members')
@@ -235,6 +233,51 @@ if __name__ == '__main__':
     create_members(members_collection, 500)
     create_orders(orders_collection, 100)
 
+    # Создание документов для демонстрации запросов
+    meetup = {
+        "name": "Yandex meetup",
+        "date": "2023-07-20",
+        "time": "14:00:00",
+        "address": {
+              "city": {
+                  "name": "Moscow",
+                  "postal_code": "200200"},
+              "street": {
+                  "name": "Molodezhnaya",
+                  "building": 10}
+        },
+        "available_seats": 100,
+        "age_limit": 18,
+        "format": "offline",
+        "status": "new",
+        "contacts": {
+              "name": "Mikhail",
+              "email": "mike@yandex.ru",
+              "phone": "9120984523"
+        }
+    }
+    events_collection.insert_one(meetup)
+
+    main_member = {
+        "name": "John",
+        "age": 28,
+        "email": "john123@gmail.com",
+        "phone": "4993451234",
+        "interests": ["IT", "Math", "Cars"],
+        "event": "Yandex meetup"
+    }
+    members_collection.insert_one(main_member)
+
+    order_by_luke = {
+        "name": "Luke",
+        "event": "Yandex meetup",
+        "amount": 4,
+        "format": "offline",
+        "email": "none&yahoo.ru",
+        "date_order": "2023-03-18"
+
+    }
+    orders_collection.insert_one(order_by_luke)
     # Поиск всех участников от 18 до 50 лет включительно
     members_btw_18_50_years_old = find_members_by_age_range(members_collection, 18, 50)
     print(members_btw_18_50_years_old)
@@ -243,4 +286,32 @@ if __name__ == '__main__':
     # Поиск мероприятий с количеством мест, равным 100
     events_with_100_seats = find_events_with_available_seats(events_collection, 100)
     print(events_with_100_seats)
+    print("=" * 50)
+
+    # Поиск мероприятий на 20.07.2023
+    events_2023_07_20 = find_events_by_date(events_collection, "2023-07-20")
+    print(events_2023_07_20)
+    print("=" * 50)
+
+    # Поиск заказов пользователя с именем Luke
+    orders_by_mike = find_orders_by_user(orders_collection, "Luke")
+    print(orders_by_mike)
+    print("=" * 50)
+
+    # Обновление количества доступных мест на Yandex meetup до 550
+    update_event_available_seats(events_collection, "Yandex meetup", 550)
+
+
+    # Объединение коллекций мероприятий и участников по полю мероприятия.
+    join_collections = join_events_members(events_collection, members_collection)
+    print(join_collections)
+    print("=" * 50)
+
+    # Сортировка мероприятий по убыванию свободных мест, осуществление пагинации
+    sorted_events = sort_and_pagination_events_by_seats(events_collection, 2, 7)
+    print(sorted_events)
+    print("=" * 50)
+
+    # Подсчет количества заказов по имени пользователя, сортировка в порядке убывания
+    aggregate_orders_by_event()
     print("=" * 50)
