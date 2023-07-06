@@ -26,4 +26,3 @@ if __name__ == '__main__':
     order_name = "Luke"
     event_name = "Yandex meetup"
     print(enroll_order(db, order_name, event_name))
-s
