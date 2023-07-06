@@ -173,18 +173,12 @@ def sort_and_pagination_events_by_seats(collection, page, page_size):
     return list(results)
 
 
-def create_index_and_demonstrate(collection, field):
-    """
-    Создание индексов в коллекции collection по полю field.
-    """
-    collection.create_index(field)
-
-
 def create_text_index(collection, field):
     """
     Создание текстового индекса в коллекции collection по полю field.
     """
     collection.create_index([(field, "text")])
+    print(f"Indexes for {collection} were created successfully.")
 
 
 def drop_all_indexes(collection):
@@ -271,7 +265,7 @@ if __name__ == '__main__':
     order_by_luke = {
         "name": "Luke",
         "event": "Yandex meetup",
-        "amount": 4,
+        "amount": 650,
         "format": "offline",
         "email": "none&yahoo.ru",
         "date_order": "2023-03-18"
@@ -281,37 +275,40 @@ if __name__ == '__main__':
     # Поиск всех участников от 18 до 50 лет включительно
     members_btw_18_50_years_old = find_members_by_age_range(members_collection, 18, 50)
     print(members_btw_18_50_years_old)
-    print("=" * 50)
+    print("=" * 50, end="\n\n")
 
     # Поиск мероприятий с количеством мест, равным 100
     events_with_100_seats = find_events_with_available_seats(events_collection, 100)
     print(events_with_100_seats)
-    print("=" * 50)
+    print("=" * 50, end="\n\n")
 
     # Поиск мероприятий на 20.07.2023
     events_2023_07_20 = find_events_by_date(events_collection, "2023-07-20")
     print(events_2023_07_20)
-    print("=" * 50)
+    print("=" * 50, end="\n\n")
 
     # Поиск заказов пользователя с именем Luke
     orders_by_mike = find_orders_by_user(orders_collection, "Luke")
     print(orders_by_mike)
-    print("=" * 50)
+    print("=" * 50, end="\n\n")
 
     # Обновление количества доступных мест на Yandex meetup до 550
     update_event_available_seats(events_collection, "Yandex meetup", 550)
+    print("=" * 50, end="\n\n")
+
+    # Создание текстового индекса в коллекции events по полю name
+    create_text_index(events_collection, "name")
+    print("=" * 50, end="\n\n")
 
 
-    # Объединение коллекций мероприятий и участников по полю мероприятия.
-    join_collections = join_events_members(events_collection, members_collection)
-    print(join_collections)
-    print("=" * 50)
+    # Удаление всех индексов, созданных на коллекции events
+    drop_all_indexes(events_collection)
+    print("=" * 50, end="\n\n")
 
     # Сортировка мероприятий по убыванию свободных мест, осуществление пагинации
     sorted_events = sort_and_pagination_events_by_seats(events_collection, 2, 7)
     print(sorted_events)
-    print("=" * 50)
+    print("=" * 50, end="\n\n")
 
     # Подсчет количества заказов по имени пользователя, сортировка в порядке убывания
     aggregate_orders_by_event()
-    print("=" * 50)
